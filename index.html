@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DoctorBek - Моё здоровье</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-attachment: fixed;
+            padding-bottom: 100px;
+            overflow-x: hidden;
+        }
+
+        /* Animated background blobs */
+        .bg-blob {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.6;
+            z-index: -1;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .blob-1 {
+            width: 300px;
+            height: 300px;
+            background: #ff6b6b;
+            top: -100px;
+            left: -100px;
+        }
+
+        .blob-2 {
+            width: 400px;
+            height: 400px;
+            background: #4ecdc4;
+            top: 50%;
+            right: -150px;
+            animation-delay: -5s;
+        }
+
+        .blob-3 {
+            width: 350px;
+            height: 350px;
+            background: #ffe66d;
+            bottom: -100px;
+            left: 30%;
+            animation-delay: -10s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(30px, -30px) rotate(5deg); }
+            50% { transform: translate(-20px, 20px) rotate(-5deg); }
+            75% { transform: translate(20px, 30px) rotate(3deg); }
+        }
+
+        /* Glass Header */
+        .header {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 24px 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .header .avatar {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #fff 0%, #e0e0e0 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin: 0 auto 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 3px solid rgba(255, 255, 255, 0.5);
+            color: #667eea;
+            font-weight: 700;
+        }
+
+        .header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .header .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .header .stats {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 16px;
+        }
+
+        .header .stat {
+            text-align: center;
+        }
+
+        .header .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .header .stat-label {
+            font-size: 11px;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Content */
+        .content {
+            padding: 20px 16px;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Glass Card */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .card-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin-right: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .card-title {
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .card-subtitle {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            font-size: 16px;
+            color: white;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+
+        .form-group select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'%3E%3Cpolyline points='6,9 12,15 18,9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 20px;
+            padding-right: 44px;
+        }
+
+        .form-group select option {
+            background: #667eea;
+            color: white;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        /* Button */
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
+            color: #667eea;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        /* List Item */
+        .list-item {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .list-item:active {
+            transform: scale(0.98);
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .list-item .icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 100%);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-right: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .list-item .info {
+            flex: 1;
+        }
+
+        .list-item .title {
+            color: white;
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom: 3px;
+        }
+
+        .list-item .subtitle {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+        }
+
+        .list-item .action {
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-flex;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge.success {
+            background: rgba(52, 199, 89, 0.3);
+            color: #7dffaa;
+            border: 1px solid rgba(52, 199, 89, 0.4);
+        }
+
+        .badge.danger {
+            background: rgba(255, 59, 48, 0.3);
+            color: #ff8a84;
+            border: 1px solid rgba(255, 59, 48, 0.4);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 50px 30px;
+            color: white;
+        }
+
+        .empty-state .icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state .title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .empty-state .desc {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: white;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Navigation */
+        .nav {
+            position: fixed;
+            bottom: 20px;
+            left: 16px;
+            right: 16px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            padding: 8px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+        }
+
+        .nav-item {
+            flex: 1;
+            padding: 12px 8px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 14px;
+            transition: all 0.3s ease;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+        }
+
+        .nav-item .icon {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .nav-item .label {
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .section-title {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 24px 0 12px;
+            padding-left: 4px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
+    <div class="bg-blob blob-3"></div>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="avatar" id="userAvatar">👤</div>
+        <h1 id="userName">Загрузка...</h1>
+        <div class="subtitle">Моя карточка здоровья</div>
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value" id="statRequests">0</div>
+                <div class="stat-label">Запросов</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="statFavorites">0</div>
+                <div class="stat-label">Избранное</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="statAnalyses">0</div>
+                <div class="stat-label">Анализов</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+        
+        <!-- Profile Page -->
+        <div class="page active" id="pageProfile">
+            <div class="loading" id="profileLoading">
+                <div class="spinner"></div>
+                <div>Загрузка профиля...</div>
+            </div>
+
+            <form id="profileForm" style="display: none;">
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-icon">👤</div>
+                        <div>
+                            <div class="card-title">Основная информация</div>
+                            <div class="card-subtitle">Расскажите о себе</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Полное имя</label>
+                        <input type="text" id="fullName" placeholder="Иван Иванов">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Дата рождения</label>
+                            <input type="date" id="birthDate">
+                        </div>
+                        <div class="form-group">
+                            <label>Пол</label>
+                            <select id="gender">
+                                <option value="">Выбрать</option>
+                                <option value="male">Мужской</option>
+                                <option value="female">Женский</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Вес (кг)</label>
+                            <input type="number" id="weight" placeholder="70">
+                        </div>
+                        <div class="form-group">
+                            <label>Рост (см)</label>
+                            <input type="number" id="height" placeholder="175">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Группа крови</label>
+                        <select id="bloodType">
+                            <option value="">Не знаю</option>
+                            <option value="O+">O+ (I положительная)</option>
+                            <option value="O-">O- (I отрицательная)</option>
+                            <option value="A+">A+ (II положительная)</option>
+                            <option value="A-">A- (II отрицательная)</option>
+                            <option value="B+">B+ (III положительная)</option>
+                            <option value="B-">B- (III отрицательная)</option>
+                            <option value="AB+">AB+ (IV положительная)</option>
+                            <option value="AB-">AB- (IV отрицательная)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-icon">⚠️</div>
+                        <div>
+                            <div class="card-title">Важная информация</div>
+                            <div class="card-subtitle">Для безопасных рекомендаций</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>🚫 Аллергии на лекарства</label>
+                        <textarea id="allergies" placeholder="Пенициллин, аспирин..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>🏥 Хронические заболевания</label>
+                        <textarea id="chronicDiseases" placeholder="Диабет, гипертония..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>💊 Текущие лекарства</label>
+                        <textarea id="currentMedications" placeholder="Метформин 500мг 2р/день..."></textarea>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn">
+                    <span>💾</span> Сохранить профиль
+                </button>
+            </form>
+        </div>
+
+        <!-- History Page -->
+        <div class="page" id="pageHistory">
+            <div class="loading" id="historyLoading">
+                <div class="spinner"></div>
+                <div>Загрузка истории...</div>
+            </div>
+            <div id="historyList"></div>
+        </div>
+
+        <!-- Analyses Page -->
+        <div class="page" id="pageAnalyses">
+            <div class="loading" id="analysesLoading">
+                <div class="spinner"></div>
+                <div>Загрузка анализов...</div>
+            </div>
+            <div id="analysesList"></div>
+        </div>
+
+        <!-- Favorites Page -->
+        <div class="page" id="pageFavorites">
+            <div class="loading" id="favoritesLoading">
+                <div class="spinner"></div>
+                <div>Загрузка избранного...</div>
+            </div>
+            <div id="favoritesList"></div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="nav">
+        <div class="nav-item active" data-page="pageProfile">
+            <div class="icon">👤</div>
+            <div class="label">Профиль</div>
+        </div>
+        <div class="nav-item" data-page="pageHistory">
+            <div class="icon">📜</div>
+            <div class="label">История</div>
+        </div>
+        <div class="nav-item" data-page="pageAnalyses">
+            <div class="icon">🧪</div>
+            <div class="label">Анализы</div>
+        </div>
+        <div class="nav-item" data-page="pageFavorites">
+            <div class="icon">⭐</div>
+            <div class="label">Избранное</div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://doctorbek.uz/api';
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+        const initData = tg.initData;
+
+        async function api(endpoint, options = {}) {
+            const response = await fetch(`${API_URL}${endpoint}`, {
+                ...options,
+                headers: { 'Content-Type': 'application/json', 'Authorization': initData, ...options.headers }
+            });
+            if (!response.ok) throw new Error(`API Error: ${response.status}`);
+            return response.json();
+        }
+
+        // Navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const pageId = item.dataset.page;
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                item.classList.add('active');
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                document.getElementById(pageId).classList.add('active');
+                loadPageData(pageId);
+                tg.HapticFeedback.selectionChanged();
+            });
+        });
+
+        function loadPageData(pageId) {
+            if (pageId === 'pageProfile') loadProfile();
+            else if (pageId === 'pageHistory') loadHistory();
+            else if (pageId === 'pageAnalyses') loadAnalyses();
+            else if (pageId === 'pageFavorites') loadFavorites();
+        }
+
+        let profileLoaded = false;
+        async function loadProfile() {
+            if (profileLoaded) return;
+            try {
+                const data = await api('/user');
+                const name = data.user.first_name || 'Пользователь';
+                document.getElementById('userName').textContent = name;
+                document.getElementById('userAvatar').textContent = name.charAt(0).toUpperCase();
+                document.getElementById('statRequests').textContent = data.user.total_requests || 0;
+                
+                if (data.profile) {
+                    document.getElementById('fullName').value = data.profile.full_name || '';
+                    document.getElementById('birthDate').value = data.profile.birth_date || '';
+                    document.getElementById('gender').value = data.profile.gender || '';
+                    document.getElementById('weight').value = data.profile.weight || '';
+                    document.getElementById('height').value = data.profile.height || '';
+                    document.getElementById('bloodType').value = data.profile.blood_type || '';
+                    document.getElementById('allergies').value = data.profile.allergies || '';
+                    document.getElementById('chronicDiseases').value = data.profile.chronic_diseases || '';
+                    document.getElementById('currentMedications').value = data.profile.current_medications || '';
+                }
+                
+                document.getElementById('profileLoading').style.display = 'none';
+                document.getElementById('profileForm').style.display = 'block';
+                profileLoaded = true;
+            } catch (error) {
+                document.getElementById('profileLoading').innerHTML = '<div class="empty-state"><div class="icon">😕</div><div class="title">Ошибка загрузки</div></div>';
+            }
+        }
+
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;margin:0;border-width:2px"></div>';
+            
+            try {
+                await api('/profile', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        full_name: document.getElementById('fullName').value,
+                        birth_date: document.getElementById('birthDate').value,
+                        gender: document.getElementById('gender').value,
+                        weight: parseFloat(document.getElementById('weight').value) || null,
+                        height: parseFloat(document.getElementById('height').value) || null,
+                        blood_type: document.getElementById('bloodType').value,
+                        allergies: document.getElementById('allergies').value,
+                        chronic_diseases: document.getElementById('chronicDiseases').value,
+                        current_medications: document.getElementById('currentMedications').value
+                    })
+                });
+                tg.HapticFeedback.notificationOccurred('success');
+                tg.showAlert('✅ Профиль сохранён!');
+            } catch (error) {
+                tg.HapticFeedback.notificationOccurred('error');
+                tg.showAlert('❌ Ошибка сохранения');
+            }
+            btn.innerHTML = '<span>💾</span> Сохранить профиль';
+        });
+
+        let historyLoaded = false;
+        async function loadHistory() {
+            if (historyLoaded) return;
+            try {
+                const data = await api('/history');
+                const list = document.getElementById('historyList');
+                if (data.history.length === 0) {
+                    list.innerHTML = '<div class="empty-state"><div class="icon">📜</div><div class="title">История пуста</div><div class="desc">Начните искать лекарства в боте</div></div>';
+                } else {
+                    list.innerHTML = '<div class="section-title">Последние поиски</div>' + data.history.map(item => `
+                        <div class="list-item">
+                            <div class="icon">${item.found ? '💊' : '❓'}</div>
+                            <div class="info">
+                                <div class="title">${item.medicine_name}</div>
+                                <div class="subtitle">${formatDate(item.created_at)}</div>
+                            </div>
+                            <span class="badge ${item.found ? 'success' : 'danger'}">${item.found ? 'Найдено' : 'Не найдено'}</span>
+                        </div>
+                    `).join('');
+                }
+                document.getElementById('historyLoading').style.display = 'none';
+                historyLoaded = true;
+            } catch (error) {
+                document.getElementById('historyLoading').innerHTML = '<div class="empty-state"><div class="icon">😕</div><div class="title">Ошибка</div></div>';
+            }
+        }
+
+        let analysesLoaded = false;
+        async function loadAnalyses() {
+            if (analysesLoaded) return;
+            try {
+                const data = await api('/analyses');
+                document.getElementById('statAnalyses').textContent = data.analyses.length;
+                const list = document.getElementById('analysesList');
+                if (data.analyses.length === 0) {
+                    list.innerHTML = '<div class="empty-state"><div class="icon">🧪</div><div class="title">Анализов пока нет</div><div class="desc">Отправьте фото анализов в бот</div></div>';
+                } else {
+                    list.innerHTML = '<div class="section-title">Ваши анализы</div>' + data.analyses.map(item => `
+                        <div class="list-item">
+                            <div class="icon">${item.file_type === 'pdf' ? '📄' : '📷'}</div>
+                            <div class="info">
+                                <div class="title">${item.analysis_type || 'Анализ'}</div>
+                                <div class="subtitle">${formatDate(item.created_at)}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+                document.getElementById('analysesLoading').style.display = 'none';
+                analysesLoaded = true;
+            } catch (error) {
+                document.getElementById('analysesLoading').innerHTML = '<div class="empty-state"><div class="icon">😕</div><div class="title">Ошибка</div></div>';
+            }
+        }
+
+        let favoritesLoaded = false;
+        async function loadFavorites() {
+            if (favoritesLoaded) return;
+            try {
+                const data = await api('/favorites');
+                document.getElementById('statFavorites').textContent = data.favorites.length;
+                const list = document.getElementById('favoritesList');
+                if (data.favorites.length === 0) {
+                    list.innerHTML = '<div class="empty-state"><div class="icon">⭐</div><div class="title">Избранное пусто</div><div class="desc">Добавляйте лекарства в избранное</div></div>';
+                } else {
+                    list.innerHTML = '<div class="section-title">Сохранённое</div>' + data.favorites.map(item => `
+                        <div class="list-item">
+                            <div class="icon">${item.item_type === 'medicine' ? '💊' : '🧪'}</div>
+                            <div class="info">
+                                <div class="title">${item.item_name}</div>
+                                <div class="subtitle">${formatDate(item.created_at)}</div>
+                            </div>
+                            <div class="action" onclick="removeFavorite(${item.id})">🗑️</div>
+                        </div>
+                    `).join('');
+                }
+                document.getElementById('favoritesLoading').style.display = 'none';
+                favoritesLoaded = true;
+            } catch (error) {
+                document.getElementById('favoritesLoading').innerHTML = '<div class="empty-state"><div class="icon">😕</div><div class="title">Ошибка</div></div>';
+            }
+        }
+
+        async function removeFavorite(id) {
+            tg.showConfirm('Удалить из избранного?', async (confirmed) => {
+                if (confirmed) {
+                    await api(`/favorites/${id}`, { method: 'DELETE' });
+                    favoritesLoaded = false;
+                    document.getElementById('favoritesLoading').style.display = 'block';
+                    document.getElementById('favoritesList').innerHTML = '';
+                    loadFavorites();
+                    tg.HapticFeedback.notificationOccurred('success');
+                }
+            });
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diff = now - date;
+            if (diff < 60000) return 'Только что';
+            if (diff < 3600000) return `${Math.floor(diff/60000)} мин назад`;
+            if (diff < 86400000) return `${Math.floor(diff/3600000)} ч назад`;
+            return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+        }
+
+        loadProfile();
+    </script>
+</body>
+</html>
